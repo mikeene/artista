@@ -47,7 +47,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { unreadCount } = useNotificationStore();
-  const { uploadModalOpen, setUploadModal, mobileMenuOpen, setMobileMenu } = useUIStore();
+  const { setUploadModal, mobileMenuOpen, setMobileMenu } = useUIStore();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -63,8 +63,6 @@ export default function Navbar() {
   }, []);
 
   if (!user) return null;
-
-  const isAdmin = user.role === 'artist' || user.id === 'admin';
 
   return (
     <>

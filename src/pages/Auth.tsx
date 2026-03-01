@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, Chrome } from 'lucide-react';
 import { useAuthStore } from '@/store';
-import { CURRENT_USER, MOCK_USERS } from '@/lib/mockData';
+import { CURRENT_USER, MOCK_POSTS } from '@/lib/mockData';
 import { isValidEmail, getPasswordStrength, sleep } from '@/lib/utils';
 import type { UserRole } from '@/types';
 import toast from 'react-hot-toast';
