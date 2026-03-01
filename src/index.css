@@ -1,0 +1,223 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ink: #1A1209;
+  --cream: #F9F4EC;
+  --terracotta: #C0532B;
+  --gold: #D4A853;
+  --violet: #593EFF;
+  --deep: #0E0B1F;
+  --sage: #7A8C72;
+  --warm: #FDF8F2;
+  --border: rgba(26,18,9,0.12);
+}
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--cream);
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: rgba(192, 83, 43, 0.2);
+    color: var(--ink);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--cream);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(192, 83, 43, 0.3);
+    border-radius: 100px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--terracotta);
+  }
+}
+
+@layer components {
+  /* ── Typography ── */
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  /* ── Buttons ── */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 
+           bg-terracotta text-white font-medium text-sm rounded
+           transition-all duration-200 hover:bg-ink hover:shadow-art 
+           active:scale-95 select-none;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3
+           border border-[var(--border)] text-ink font-medium text-sm rounded
+           transition-all duration-200 hover:border-terracotta hover:text-terracotta
+           active:scale-95 select-none bg-transparent;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 text-sm font-medium text-ink 
+           opacity-70 hover:opacity-100 transition-opacity duration-200;
+  }
+
+  .btn-icon {
+    @apply inline-flex items-center justify-center w-9 h-9 rounded-full
+           transition-all duration-200 hover:bg-black/5 active:scale-90;
+  }
+
+  /* ── Cards ── */
+  .card {
+    @apply bg-warm border border-[var(--border)] rounded overflow-hidden;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-elevated hover:-translate-y-1;
+  }
+
+  /* ── Post grid ── */
+  .post-img {
+    @apply w-full object-cover transition-transform duration-700 group-hover:scale-105;
+  }
+
+  /* ── Section labels ── */
+  .section-label {
+    @apply flex items-center gap-2 text-xs font-medium tracking-[0.14em] uppercase text-terracotta mb-3;
+  }
+  .section-label::before {
+    content: '';
+    @apply block w-5 h-px bg-terracotta flex-shrink-0;
+  }
+
+  /* ── Inputs ── */
+  .input {
+    @apply w-full px-4 py-3 bg-warm border border-[var(--border)] rounded
+           text-sm text-ink placeholder-ink/40 outline-none
+           transition-all duration-200
+           focus:border-terracotta focus:ring-2 focus:ring-terracotta/10;
+  }
+
+  .input-dark {
+    @apply w-full px-4 py-3 bg-white/10 border border-white/20 rounded
+           text-sm text-white placeholder-white/50 outline-none
+           transition-all duration-200
+           focus:border-white/50 focus:ring-2 focus:ring-white/10;
+  }
+
+  /* ── Badges ── */
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  /* ── Avatar ── */
+  .avatar {
+    @apply rounded-full object-cover bg-gradient-to-br from-terracotta to-gold flex-shrink-0;
+  }
+
+  /* ── Nav tab ── */
+  .nav-tab {
+    @apply relative pb-3 text-sm font-medium text-ink/50 hover:text-ink
+           transition-colors duration-200 whitespace-nowrap;
+  }
+  .nav-tab.active {
+    @apply text-terracotta;
+  }
+  .nav-tab.active::after {
+    content: '';
+    @apply absolute bottom-0 left-0 right-0 h-0.5 bg-terracotta rounded-full;
+  }
+
+  /* ── Overlay gradient ── */
+  .post-overlay {
+    @apply absolute inset-0 bg-gradient-to-t from-deep/80 via-transparent to-transparent
+           opacity-0 group-hover:opacity-100 transition-opacity duration-300;
+  }
+
+  /* ── Mosaic art colors ── */
+  .art-terracotta { background: linear-gradient(145deg, #7A2E1A, #C0532B, #D4A853); }
+  .art-ocean     { background: linear-gradient(135deg, #1A2A3A, #3A7A8A, #5ABFCA); }
+  .art-violet    { background: linear-gradient(160deg, #2A1A3A, #7A3ABF, #B06AEA); }
+  .art-earth     { background: linear-gradient(110deg, #3A2A1A, #8A6040, #D4A870); }
+  .art-sage      { background: linear-gradient(135deg, #1A3A2A, #4A8A5A, #90C080); }
+  .art-rose      { background: linear-gradient(155deg, #3A1A2A, #8A3A5A, #C08090); }
+  .art-indigo    { background: linear-gradient(130deg, #1A1A3A, #3A3A8A, #7070D0); }
+  .art-amber     { background: linear-gradient(145deg, #3A2A0A, #8A6010, #D4A020); }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  /* Hide scrollbar but keep function */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Grain texture */
+  .grain::after {
+    content: '';
+    position: fixed;
+    inset: -50%;
+    width: 200%;
+    height: 200%;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+    opacity: 0.025;
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
+
+/* ── Page Transitions ── */
+.page-enter {
+  opacity: 0;
+  transform: translateY(16px);
+}
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* ── Mobile bottom nav safe area ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4rem);
+  }
+}
