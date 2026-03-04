@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, Chrome } from 'lucide-react';
 import { useAuthStore } from '@/store';
-import { CURRENT_USER, MOCK_POSTS } from '@/lib/mockData';
-import { isValidEmail, getPasswordStrength, sleep } from '@/lib/utils';
+import { signIn, signUp, signInWithGoogle } from '@/lib/authService';
+import { MOCK_POSTS } from '@/lib/mockData';
+import { isValidEmail, getPasswordStrength } from '@/lib/utils';
 import type { UserRole } from '@/types';
 import toast from 'react-hot-toast';
 
@@ -21,18 +22,39 @@ export function Login() {
     if (!isValidEmail(email)) { toast.error('Enter a valid email address'); return; }
     if (password.length < 6) { toast.error('Password too short'); return; }
     setLoading(true);
-    await sleep(1200);
-    login(CURRENT_USER);
-    toast.success('Welcome back! 🎨');
-    navigate('/feed');
+    try {
+      const user = await signIn(email, password);
+      login(user);
+      toast.success('Welcome back! 🎨');
+      navigate('/feed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Sign in failed';
+      if (msg.includes('user-not-found') || msg.includes('wrong-password') || msg.includes('invalid-credential')) {
+        toast.error('Incorrect email or password');
+      } else {
+        toast.error('Sign in failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setLoading(true);
+    try {
+      const user = await signInWithGoogle();
+      login(user);
+      toast.success('Welcome! 🎨');
+      navigate('/feed');
+    } catch {
+      toast.error('Google sign in failed');
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <AuthLayout
-      title="Welcome back"
-      subtitle="Sign in to continue to Artista"
-      artIndex={0}
-    >
+    <AuthLayout title="Welcome back" subtitle="Sign in to continue to Artista" artIndex={0}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-xs font-medium text-ink/70 uppercase tracking-wide mb-1.5">Email</label>
@@ -57,26 +79,17 @@ export function Login() {
             </button>
           </div>
         </div>
-
         <button type="submit" disabled={loading} className="btn-primary w-full py-3 mt-2">
           {loading ? <span className="animate-pulse">Signing in…</span> : <><span>Sign In</span><ArrowRight className="w-4 h-4" /></>}
         </button>
-
         <div className="relative flex items-center gap-3 py-2">
           <div className="flex-1 h-px bg-[var(--border)]" />
           <span className="text-xs text-ink/40">or continue with</span>
           <div className="flex-1 h-px bg-[var(--border)]" />
         </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <button type="button" onClick={() => { login(CURRENT_USER); navigate('/feed'); }} className="btn-secondary py-2.5 text-sm">
-            <Chrome className="w-4 h-4" /> Google
-          </button>
-          <button type="button" onClick={() => { login(CURRENT_USER); navigate('/feed'); }} className="btn-secondary py-2.5 text-sm">
-            <span className="font-bold">🍎</span> Apple
-          </button>
-        </div>
-
+        <button type="button" onClick={handleGoogle} disabled={loading} className="btn-secondary w-full py-2.5 text-sm">
+          <Chrome className="w-4 h-4" /> Continue with Google
+        </button>
         <p className="text-center text-sm text-ink/60 pt-2">
           Don't have an account?{' '}
           <Link to="/signup" className="text-terracotta font-medium hover:underline">Sign up free</Link>
@@ -91,14 +104,11 @@ export function Signup() {
   const navigate = useNavigate();
   const { login } = useAuthStore();
   const [step, setStep] = useState<1 | 2>(1);
-  const [form, setForm] = useState({
-    name: '', email: '', password: '', role: '' as UserRole | '',
-  });
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: '' as UserRole | '' });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const strength = getPasswordStrength(form.password);
-
   function update(key: string, val: string) { setForm(f => ({ ...f, [key]: val })); }
 
   async function handleStep1(e: React.FormEvent) {
@@ -113,10 +123,35 @@ export function Signup() {
     e.preventDefault();
     if (!form.role) { toast.error('Select your role'); return; }
     setLoading(true);
-    await sleep(1500);
-    login({ ...CURRENT_USER, displayName: form.name, email: form.email, role: form.role as UserRole });
-    toast.success('Account created! Welcome to Artista 🎨');
-    navigate('/feed');
+    try {
+      const user = await signUp(form.email, form.password, form.name, form.role as UserRole);
+      login(user);
+      toast.success('Welcome to Artista! 🎨');
+      navigate('/feed');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('email-already-in-use')) {
+        toast.error('An account with this email already exists');
+      } else {
+        toast.error('Sign up failed. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogle() {
+    setLoading(true);
+    try {
+      const user = await signInWithGoogle();
+      login(user);
+      toast.success('Welcome to Artista! 🎨');
+      navigate('/feed');
+    } catch {
+      toast.error('Google sign in failed');
+    } finally {
+      setLoading(false);
+    }
   }
 
   const roles: { value: UserRole; label: string; desc: string; emoji: string }[] = [
@@ -131,7 +166,6 @@ export function Signup() {
       subtitle={step === 1 ? 'Join thousands of African creatives' : 'Choose your role to personalise your experience'}
       artIndex={1}
     >
-      {/* Step indicator */}
       <div className="flex items-center gap-2 mb-6">
         {[1, 2].map(s => (
           <div key={s} className="flex items-center gap-2">
@@ -171,8 +205,7 @@ export function Signup() {
                 <div className="flex gap-1 mb-1">
                   {[1,2,3,4,5].map(i => (
                     <div key={i} className="flex-1 h-1 rounded-full transition-colors duration-300"
-                      style={{ background: i <= strength.score ? strength.color : 'rgba(26,18,9,0.1)' }}
-                    />
+                      style={{ background: i <= strength.score ? strength.color : 'rgba(26,18,9,0.1)' }} />
                   ))}
                 </div>
                 <p className="text-xs" style={{ color: strength.color }}>{strength.label}</p>
@@ -187,14 +220,9 @@ export function Signup() {
             <span className="text-xs text-ink/40">or</span>
             <div className="flex-1 h-px bg-[var(--border)]" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <button type="button" onClick={() => { login(CURRENT_USER); navigate('/feed'); }} className="btn-secondary py-2.5 text-sm">
-              <Chrome className="w-4 h-4" /> Google
-            </button>
-            <button type="button" onClick={() => { login(CURRENT_USER); navigate('/feed'); }} className="btn-secondary py-2.5 text-sm">
-              <span className="font-bold">🍎</span> Apple
-            </button>
-          </div>
+          <button type="button" onClick={handleGoogle} disabled={loading} className="btn-secondary w-full py-2.5 text-sm">
+            <Chrome className="w-4 h-4" /> Continue with Google
+          </button>
           <p className="text-center text-sm text-ink/60">
             Already have an account?{' '}
             <Link to="/login" className="text-terracotta font-medium hover:underline">Sign in</Link>
@@ -204,28 +232,15 @@ export function Signup() {
         <form onSubmit={handleStep2} className="space-y-3">
           {roles.map(r => (
             <label key={r.value} className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer transition-all duration-200
-              ${form.role === r.value
-                ? 'border-terracotta bg-terracotta/5'
-                : 'border-[var(--border)] hover:border-terracotta/40 hover:bg-warm'
-              }`}>
-              <input
-                type="radio"
-                name="role"
-                value={r.value}
-                checked={form.role === r.value}
-                onChange={e => update('role', e.target.value)}
-                className="sr-only"
-              />
+              ${form.role === r.value ? 'border-terracotta bg-terracotta/5' : 'border-[var(--border)] hover:border-terracotta/40 hover:bg-warm'}`}>
+              <input type="radio" name="role" value={r.value} checked={form.role === r.value} onChange={e => update('role', e.target.value)} className="sr-only" />
               <span className="text-2xl">{r.emoji}</span>
               <div className="flex-1">
                 <p className="font-semibold text-ink text-sm">{r.label}</p>
                 <p className="text-xs text-ink/55 mt-0.5">{r.desc}</p>
               </div>
-              <div className={`w-4 h-4 rounded-full border-2 transition-colors duration-200
-                ${form.role === r.value ? 'border-terracotta bg-terracotta' : 'border-[var(--border)]'}`}>
-                {form.role === r.value && <div className="w-full h-full rounded-full flex items-center justify-center">
-                  <div className="w-1.5 h-1.5 bg-white rounded-full" />
-                </div>}
+              <div className={`w-4 h-4 rounded-full border-2 transition-colors duration-200 ${form.role === r.value ? 'border-terracotta bg-terracotta' : 'border-[var(--border)]'}`}>
+                {form.role === r.value && <div className="w-full h-full rounded-full flex items-center justify-center"><div className="w-1.5 h-1.5 bg-white rounded-full" /></div>}
               </div>
             </label>
           ))}
@@ -242,23 +257,14 @@ export function Signup() {
 }
 
 // ── Shared Auth Layout ───────────────────────────────
-function AuthLayout({
-  children,
-  title,
-  subtitle,
-  artIndex,
-}: {
-  children: React.ReactNode;
-  title: string;
-  subtitle: string;
-  artIndex: number;
+function AuthLayout({ children, title, subtitle, artIndex }: {
+  children: React.ReactNode; title: string; subtitle: string; artIndex: number;
 }) {
   const artClasses = ['art-terracotta', 'art-violet', 'art-ocean', 'art-sage'];
   const art = artClasses[artIndex % artClasses.length];
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2">
-      {/* Left: Form */}
       <div className="flex flex-col justify-center px-6 sm:px-12 lg:px-16 py-16">
         <Link to="/" className="flex items-center gap-2 mb-12">
           <div className="w-8 h-8 bg-terracotta rounded-lg flex items-center justify-center">
@@ -266,15 +272,12 @@ function AuthLayout({
           </div>
           <span className="font-serif font-black text-xl text-ink">Artista<span className="text-terracotta">.</span></span>
         </Link>
-
         <div className="max-w-sm w-full mx-auto lg:mx-0">
           <h1 className="font-serif font-bold text-3xl text-ink mb-2">{title}</h1>
           <p className="text-sm text-ink/60 mb-8">{subtitle}</p>
           {children}
         </div>
       </div>
-
-      {/* Right: Art panel */}
       <div className={`hidden lg:flex items-center justify-center relative overflow-hidden ${art}`}>
         <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-transparent" />
         <div className="relative text-center px-12">
@@ -283,17 +286,10 @@ function AuthLayout({
           </blockquote>
           <p className="text-white/60 text-sm">— Pablo Picasso</p>
         </div>
-
-        {/* Floating post cards */}
         {MOCK_POSTS.slice(0, 3).map((post, i) => (
-          <div
-            key={post.id}
+          <div key={post.id}
             className={`absolute w-32 h-40 rounded-lg overflow-hidden shadow-elevated opacity-60 ${post.imageUrl}`}
-            style={{
-              top: `${15 + i * 25}%`,
-              right: i % 2 === 0 ? '5%' : '15%',
-              transform: `rotate(${i % 2 === 0 ? -6 : 5}deg)`,
-            }}
+            style={{ top: `${15 + i * 25}%`, right: i % 2 === 0 ? '5%' : '15%', transform: `rotate(${i % 2 === 0 ? -6 : 5}deg)` }}
           />
         ))}
       </div>
