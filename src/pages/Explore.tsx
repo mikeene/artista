@@ -10,7 +10,6 @@ import { cn, formatCount } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { followUser, unfollowUser, getFollowStatuses } from '@/lib/userService';
-import { useAuthStore } from '@/store';
 import toast from 'react-hot-toast';
 import { db } from '@/lib/firebase';
 
