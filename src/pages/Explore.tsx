@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import { usePostStore } from '@/store';
+import { usePostStore, useAuthStore } from '@/store';
 import { ART_CATEGORIES } from '@/lib/mockData';
 import ArtCard from '@/components/feed/ArtCard';
 import ArtworkDetail from '@/components/feed/ArtworkDetail';
@@ -9,6 +9,9 @@ import type { Post, ExploreTab, User } from '@/types';
 import { cn, formatCount } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { followUser, unfollowUser, getFollowStatuses } from '@/lib/userService';
+import { useAuthStore } from '@/store';
+import toast from 'react-hot-toast';
 import { db } from '@/lib/firebase';
 
 const TABS: { key: ExploreTab; label: string }[] = [
@@ -19,12 +22,15 @@ const TABS: { key: ExploreTab; label: string }[] = [
 
 export default function Explore() {
   const { posts } = usePostStore();
+  const { user } = useAuthStore();
   const [query2, setQuery] = useState('');
   const [tab, setTab] = useState<ExploreTab>('trending');
   const [category, setCategory] = useState('All');
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
+  const [followLoading, setFollowLoading] = useState<string | null>(null);
 
   // Load real users from Firestore
   useEffect(() => {
@@ -35,8 +41,15 @@ export default function Explore() {
         const snap = await getDocs(q);
         const users = snap.docs.map(d => ({ id: d.id, ...d.data() } as User));
         setAllUsers(users);
+        if (user?.id && users.length > 0) {
+          try {
+            const statuses = await getFollowStatuses(user.id, users.map(u => u.id));
+            const map: Record<string, boolean> = {};
+            users.forEach(u => { map[u.id] = statuses.has(u.id); });
+            setFollowingMap(map);
+          } catch { /* ignore */ }
+        }
       } catch {
-        // Firestore not available, show empty
         setAllUsers([]);
       } finally {
         setLoadingUsers(false);
@@ -72,6 +85,33 @@ export default function Explore() {
       u.artInterests?.some(i => i.toLowerCase().includes(q))
     );
   }, [allUsers, query2]);
+
+  async function handleFollow(e: React.MouseEvent, targetId: string) {
+    e.preventDefault(); // prevent navigating to profile
+    if (!user) return;
+    setFollowLoading(targetId);
+    const isFollowed = followingMap[targetId];
+    setFollowingMap(prev => ({ ...prev, [targetId]: !isFollowed }));
+    setAllUsers(prev => prev.map(u =>
+      u.id === targetId
+        ? { ...u, followersCount: (u.followersCount ?? 0) + (isFollowed ? -1 : 1) }
+        : u
+    ));
+    try {
+      if (isFollowed) {
+        await unfollowUser(user.id, targetId);
+        toast.success('Unfollowed');
+      } else {
+        await followUser(user.id, targetId);
+        toast.success('Following! 🎨');
+      }
+    } catch {
+      setFollowingMap(prev => ({ ...prev, [targetId]: isFollowed }));
+      toast.error('Something went wrong');
+    } finally {
+      setFollowLoading(null);
+    }
+  }
 
   return (
     <div className="min-h-screen pb-20 md:pb-8">
@@ -180,6 +220,21 @@ export default function Explore() {
                   <div className="flex gap-3 mt-2 text-xs text-ink/40">
                     <span>{formatCount(artist.followersCount ?? 0)} followers</span>
                   </div>
+                  {artist.id !== user?.id && (
+                    <button
+                      onClick={(e) => handleFollow(e, artist.id)}
+                      disabled={followLoading === artist.id}
+                      className={cn(
+                        'mt-2 text-xs font-medium px-3 py-1 rounded-full border transition-all duration-200',
+                        followingMap[artist.id]
+                          ? 'border-ink/20 text-ink/50 hover:border-red-300 hover:text-red-400'
+                          : 'border-terracotta text-terracotta hover:bg-terracotta hover:text-white',
+                        followLoading === artist.id && 'opacity-50 cursor-not-allowed'
+                      )}
+                    >
+                      {followLoading === artist.id ? '…' : followingMap[artist.id] ? 'Following' : 'Follow'}
+                    </button>
+                  )}
                 </Link>
               ))}
             </div>

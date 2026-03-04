@@ -9,6 +9,8 @@ import { cn, formatCount } from '@/lib/utils';
 import { collection, getDocs, query, orderBy, limit, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getFeedPosts } from '@/lib/postService';
+import { followUser, unfollowUser, getFollowStatuses } from '@/lib/userService';
+import toast from 'react-hot-toast';
 
 const TABS: { key: FeedTab; label: string }[] = [
   { key: 'discover', label: 'Discover' },
@@ -25,6 +27,8 @@ export default function Feed() {
   const [page, setPage] = useState(1);
   const [suggestedUsers, setSuggestedUsers] = useState<User[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
+  const [followingMap, setFollowingMap] = useState<Record<string, boolean>>({});
+  const [followLoading, setFollowLoading] = useState<string | null>(null);
 
   // Load real posts from Firestore
   useEffect(() => {
@@ -58,12 +62,49 @@ export default function Feed() {
           .map(d => ({ id: d.id, ...d.data() } as User))
           .filter(u => u.id !== user?.id); // exclude self
         setSuggestedUsers(users);
+        // Load follow statuses
+        if (user?.id && users.length > 0) {
+          try {
+            const statuses = await getFollowStatuses(user.id, users.map(u => u.id));
+            const map: Record<string, boolean> = {};
+            users.forEach(u => { map[u.id] = statuses.has(u.id); });
+            setFollowingMap(map);
+          } catch { /* ignore */ }
+        }
       } catch {
         setSuggestedUsers([]);
       }
     }
     loadUsers();
   }, [user?.id]);
+
+  async function handleFollow(targetId: string) {
+    if (!user) return;
+    setFollowLoading(targetId);
+    const isFollowed = followingMap[targetId];
+    // Optimistic update
+    setFollowingMap(prev => ({ ...prev, [targetId]: !isFollowed }));
+    setSuggestedUsers(prev => prev.map(u =>
+      u.id === targetId
+        ? { ...u, followersCount: (u.followersCount ?? 0) + (isFollowed ? -1 : 1) }
+        : u
+    ));
+    try {
+      if (isFollowed) {
+        await unfollowUser(user.id, targetId);
+        toast.success('Unfollowed');
+      } else {
+        await followUser(user.id, targetId);
+        toast.success('Following! 🎨');
+      }
+    } catch {
+      // Revert on error
+      setFollowingMap(prev => ({ ...prev, [targetId]: isFollowed }));
+      toast.error('Something went wrong');
+    } finally {
+      setFollowLoading(null);
+    }
+  }
 
   const displayPosts = tab === 'following'
     ? posts.filter(p => p.authorId !== user?.id)
@@ -189,8 +230,18 @@ export default function Feed() {
                           <p className="text-[10px] text-ink/50 capitalize">{u.role}</p>
                         </div>
                       </Link>
-                      <button className="text-xs font-medium text-terracotta hover:text-ink transition-colors ml-2 flex-shrink-0">
-                        Follow
+                      <button
+                        onClick={() => handleFollow(u.id)}
+                        disabled={followLoading === u.id}
+                        className={cn(
+                          'text-xs font-medium transition-colors ml-2 flex-shrink-0 px-2.5 py-1 rounded-full border',
+                          followingMap[u.id]
+                            ? 'border-ink/20 text-ink/50 hover:border-red-300 hover:text-red-400'
+                            : 'border-terracotta text-terracotta hover:bg-terracotta hover:text-white',
+                          followLoading === u.id && 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        {followLoading === u.id ? '…' : followingMap[u.id] ? 'Following' : 'Follow'}
                       </button>
                     </div>
                   ))}

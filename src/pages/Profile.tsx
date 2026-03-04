@@ -7,9 +7,10 @@ import ArtCard from '@/components/feed/ArtCard';
 import ArtworkDetail from '@/components/feed/ArtworkDetail';
 import Avatar from '@/components/ui/Avatar';
 import type { Post, User } from '@/types';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getUserPosts } from '@/lib/postService';
+import { followUser, unfollowUser, isFollowing } from '@/lib/userService';
 import { MOCK_USERS } from '@/lib/mockData';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,7 @@ export default function Profile() {
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [profilePosts, setProfilePosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [followLoading, setFollowLoading] = useState(false);
 
   const isOwnProfile = currentUser?.id === id;
 
@@ -63,6 +65,18 @@ export default function Profile() {
     }
     loadProfile();
   }, [id, posts]);
+
+  // Check follow status
+  useEffect(() => {
+    async function checkFollow() {
+      if (!currentUser || isOwnProfile || !id) return;
+      try {
+        const status = await isFollowing(currentUser.id, id);
+        setFollowing(status);
+      } catch { /* ignore */ }
+    }
+    checkFollow();
+  }, [id, currentUser?.id, isOwnProfile]);
 
   // If viewing own profile, always use current user data
   const displayUser = isOwnProfile ? currentUser : profileUser;
@@ -139,6 +153,7 @@ export default function Profile() {
               {!isOwnProfile && (
                 <button
                   onClick={handleFollow}
+                  disabled={followLoading}
                   className={cn(
                     'px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2',
                     following
@@ -146,7 +161,7 @@ export default function Profile() {
                       : 'bg-terracotta text-white hover:bg-white hover:text-terracotta'
                   )}
                 >
-                  {following ? <><Check className="w-4 h-4" /> Following</> : 'Follow'}
+                  {followLoading ? '…' : following ? <><Check className="w-4 h-4" /> Following</> : 'Follow'}
                 </button>
               )}
               {isOwnProfile && (
