@@ -13,6 +13,7 @@ import Profile from '@/pages/Profile';
 import Messages from '@/pages/Messages';
 import Notifications from '@/pages/Notifications';
 import Admin from '@/pages/Admin';
+import Settings from '@/pages/Settings';
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, loading } = useAuthStore();
@@ -83,6 +84,7 @@ export default function App() {
         <Route path="/profile/:id" element={<ProtectedLayout><Profile /></ProtectedLayout>} />
         <Route path="/messages"    element={<ProtectedLayout><Messages /></ProtectedLayout>} />
         <Route path="/notifications" element={<ProtectedLayout><Notifications /></ProtectedLayout>} />
+        <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
         <Route path="/admin"   element={<ProtectedLayout><Admin /></ProtectedLayout>} />
         <Route path="*"        element={<Navigate to="/" replace />} />
       </Routes>
