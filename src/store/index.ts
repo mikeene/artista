@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import type { User, Post, Notification, Chat, Message } from '@/types';
-import { MOCK_NOTIFICATIONS, MOCK_CHATS, MOCK_MESSAGES } from '@/lib/mockData';
+// Mock data only used for development previews
 import { onAuthChange, logOut } from '@/lib/authService';
 
 // ── Auth Store ───────────────────────────────────────
@@ -72,8 +72,8 @@ interface NotificationStore {
 }
 
 export const useNotificationStore = create<NotificationStore>((set) => ({
-  notifications: MOCK_NOTIFICATIONS,
-  unreadCount: MOCK_NOTIFICATIONS.filter((n) => !n.read).length,
+  notifications: [],
+  unreadCount: 0,
   markRead: (id) =>
     set((state) => {
       const notifications = state.notifications.map((n) =>
@@ -98,9 +98,9 @@ interface ChatStore {
 }
 
 export const useChatStore = create<ChatStore>((set) => ({
-  chats: MOCK_CHATS,
+  chats: [],
   activeChat: null,
-  messages: { chat1: MOCK_MESSAGES },
+  messages: {},
   setActiveChat: (chatId) => set({ activeChat: chatId }),
   sendMessage: (chatId, content, sender) => {
     const newMessage: Message = {
