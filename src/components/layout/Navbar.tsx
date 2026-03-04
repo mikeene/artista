@@ -108,8 +108,8 @@ export default function Navbar() {
 
             {/* Right actions */}
             <div className="flex items-center gap-2 ml-4">
-              {/* Upload CTA - visible for artists */}
-              {user.role === 'artist' && (
+              {/* Upload CTA - visible for all users */}
+              {user && (
                 <button
                   onClick={() => setUploadModal(true)}
                   className="hidden sm:flex items-center gap-2 px-4 py-2 bg-terracotta text-white
@@ -196,7 +196,7 @@ export default function Navbar() {
               <NavLink to="/messages" icon={<MessageCircle className="w-5 h-5" />} label="Messages"     onClick={() => setMobileMenu(false)} />
               <NavLink to="/notifications" icon={<Bell className="w-5 h-5" />}     label="Notifications" badge={unreadCount} onClick={() => setMobileMenu(false)} />
               <NavLink to={`/profile/${user.id}`} icon={<User className="w-5 h-5" />} label="My Profile" onClick={() => setMobileMenu(false)} />
-              {user.role === 'artist' && (
+              {user && (
                 <button
                   onClick={() => { setMobileMenu(false); setUploadModal(true); }}
                   className="flex items-center gap-2 px-3 py-2 bg-terracotta text-white rounded-lg text-sm font-medium mt-2"
