@@ -1,32 +1,49 @@
 import { create } from 'zustand';
 import type { User, Post, Notification, Chat, Message } from '@/types';
-import { CURRENT_USER, MOCK_POSTS, MOCK_NOTIFICATIONS, MOCK_CHATS, MOCK_MESSAGES } from '@/lib/mockData';
+import { MOCK_NOTIFICATIONS, MOCK_CHATS, MOCK_MESSAGES } from '@/lib/mockData';
+import { onAuthChange, logOut } from '@/lib/authService';
 
 // ── Auth Store ───────────────────────────────────────
 interface AuthStore {
   user: User | null;
   isAuthenticated: boolean;
+  loading: boolean;
   login: (user: User) => void;
   logout: () => void;
+  initAuth: () => () => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
-  user: CURRENT_USER, // Pre-logged in for demo
-  isAuthenticated: true,
-  login: (user) => set({ user, isAuthenticated: true }),
-  logout: () => set({ user: null, isAuthenticated: false }),
+  user: null,
+  isAuthenticated: false,
+  loading: true,
+  login: (user) => set({ user, isAuthenticated: true, loading: false }),
+  logout: async () => {
+    await logOut();
+    set({ user: null, isAuthenticated: false });
+  },
+  initAuth: () => {
+    const unsub = onAuthChange((user) => {
+      set({ user, isAuthenticated: !!user, loading: false });
+    });
+    return unsub;
+  },
 }));
 
 // ── Post Store ───────────────────────────────────────
 interface PostStore {
   posts: Post[];
+  loading: boolean;
+  setPosts: (posts: Post[]) => void;
   toggleLike: (postId: string) => void;
   toggleSave: (postId: string) => void;
   addPost: (post: Post) => void;
 }
 
 export const usePostStore = create<PostStore>((set) => ({
-  posts: MOCK_POSTS,
+  posts: [],
+  loading: false,
+  setPosts: (posts) => set({ posts, loading: false }),
   toggleLike: (postId) =>
     set((state) => ({
       posts: state.posts.map((p) =>
@@ -43,8 +60,7 @@ export const usePostStore = create<PostStore>((set) => ({
           : p
       ),
     })),
-  addPost: (post) =>
-    set((state) => ({ posts: [post, ...state.posts] })),
+  addPost: (post) => set((state) => ({ posts: [post, ...state.posts] })),
 }));
 
 // ── Notification Store ───────────────────────────────
