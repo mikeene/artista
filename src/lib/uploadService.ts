@@ -14,7 +14,6 @@ export async function uploadImage(
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', UPLOAD_PRESET);
-  formData.append('folder', 'artista');
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();

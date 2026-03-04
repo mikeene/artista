@@ -29,7 +29,10 @@ export default function ArtCard({ post, onClick, variant = 'feed' }: ArtCardProp
         onClick={onClick}
         className="group relative overflow-hidden rounded cursor-pointer aspect-square"
       >
-        <div className={cn('w-full h-full transition-transform duration-700 group-hover:scale-105', post.imageUrl)} />
+        {post.imageUrl?.startsWith('http')
+          ? <img src={post.imageUrl} alt={post.title} className='w-full h-full object-cover transition-transform duration-700 group-hover:scale-105' />
+          : <div className={cn('w-full h-full transition-transform duration-700 group-hover:scale-105', post.imageUrl)} />
+        }
         <div className="post-overlay" />
         <div className="absolute inset-0 flex flex-col justify-end p-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
           <p className="text-white font-serif font-bold text-sm line-clamp-1 mb-1">{post.title}</p>
@@ -75,7 +78,10 @@ export default function ArtCard({ post, onClick, variant = 'feed' }: ArtCardProp
         onClick={onClick}
         className="relative overflow-hidden cursor-pointer aspect-[4/3]"
       >
-        <div className={cn('w-full h-full transition-transform duration-700 group-hover:scale-104', post.imageUrl)} />
+        {post.imageUrl?.startsWith('http')
+          ? <img src={post.imageUrl} alt={post.title} className='w-full h-full object-cover transition-transform duration-700 group-hover:scale-104' />
+          : <div className={cn('w-full h-full transition-transform duration-700 group-hover:scale-104', post.imageUrl)} />
+        }
       </div>
 
       {/* Actions */}

@@ -52,7 +52,10 @@ export default function ArtworkDetail({ post, onClose }: ArtworkDetailProps) {
 
         {/* ── Left: Artwork ── */}
         <div className="relative flex-1 bg-deep min-h-64 md:min-h-0 flex-shrink-0 md:max-w-[55%]">
-          <div className={cn('w-full h-full min-h-64', livePost.imageUrl)} />
+          {livePost.imageUrl?.startsWith('http')
+            ? <img src={livePost.imageUrl} alt={livePost.title} className='w-full h-full min-h-64 object-cover' />
+            : <div className={cn('w-full h-full min-h-64', livePost.imageUrl)} />
+          }
 
           {/* Controls overlay */}
           <div className="absolute top-3 right-3 flex gap-2">
